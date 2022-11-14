@@ -213,10 +213,10 @@ const User = sequelize.define(
     description: { type: DataTypes.STRING, defaultValue: "no description" },
     password: { type: DataTypes.STRING },
     avatar: { type: DataTypes.STRING, defaultValue: null },
+    phone: { type: DataTypes.STRING },
     role: { type: DataTypes.STRING, defaultValue: "USER" },
-    locationId: { type: DataTypes.INTEGER, defaultValue: 1 },
-}
-)
+    locationid: { type: DataTypes.INTEGER, defaultValue: 1 },
+})
 
 const Item = sequelize.define(
     'item', {
@@ -226,6 +226,7 @@ const Item = sequelize.define(
     state: { type: DataTypes.INTEGER },
     userid: { type: DataTypes.INTEGER },
     description: { type: DataTypes.STRING },
+    phone: { type: DataTypes.STRING },
     price: { type: DataTypes.INTEGER },
     published: { type: DataTypes.BOOLEAN, defaultValue: true },
     locationid: { type: DataTypes.INTEGER },
@@ -265,12 +266,6 @@ BasketItems.belongsTo(Basket);
 
 Item.hasMany(BasketItems);
 BasketItems.belongsTo(Item);
-
-// Categories.hasMany(Item);
-// Item.belongsTo(Categories);
-
-// Locations.hasMany(Item);
-// Item.belongsTo(Locations);
 
 module.exports = {
     User,

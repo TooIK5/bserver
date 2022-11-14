@@ -25,7 +25,7 @@ const filemv = (img) => {
 
 class UserController {
     async registration(req, res, next) {
-        const { email, password, role, username } = req.body;
+        const { email, password, role, username, phone } = req.body;
         if (!email || !password) {
             return next(ApiError.badRequest("Некорректный email или password"));
         }
@@ -34,7 +34,7 @@ class UserController {
             return next(ApiError.badRequest("Пользователь с таким email уже существует"));
         }
         const hashPassword = await bcrypt.hash(password, 5);
-        const user = await User.create({ email, role, password: hashPassword, username })
+        const user = await User.create({ email, role, phone, password: hashPassword, username })
         const basket = await Basket.create({ userId: user.id })
         const token = generateJWT(user.id, email, user.role);
         return res.json({ token, user })
@@ -65,7 +65,7 @@ class UserController {
             const user = await User.findOne({
                 where: { email: decoded.email }
             });
-            res.json({  user })
+            res.json({ user })
         } catch (e) {
             return next(ApiError.internal("Токен истек"))
         }
@@ -78,24 +78,34 @@ class UserController {
     }
 
     async update(req, res, next) {
+        try {
+            const { id, username, description, phone, locationid } = req.body;
+            let name = undefined;
+            if (req.files) {
+                var { avatar } = req.files;
+                name = filemv(avatar);
+            }
+            let user = await User.findOne(
+                {
+                    where: { id },
+                    attributes: { exclude: ['password'] },
+                })
+            if (user.avatar && req.files) {
+                fs.unlink(path.resolve(__dirname, "../../static", user.avatar), (err) => { return err });
+            }
+            await User.update(
+                { username, description, avatar: name, phone, locationid },
+                { where: { id } });
 
-        const { id, username, description, locationId } = req.body;
-        const user = await User.findOne(
-
-            {
-                where: { id },
-                attributes: { exclude: ['password'] },
-            })
-
-        var { avatar } = req.files;
-        let name = filemv(avatar);
-
-        fs.unlink(path.resolve(__dirname, "../../static", user.avatar), (err) => { });
-        const items = await User.update(
-            { id, username, description, avatar: name, locationId },
-            { where: { id } })
-
-        res.json(user);
+            user = await User.findOne(
+                {
+                    where: { id },
+                    attributes: { exclude: ['password'] },
+                })
+            res.json(user);
+        } catch (e) {
+            return next(ApiError.internal(e.message))
+        }
     }
 }
 

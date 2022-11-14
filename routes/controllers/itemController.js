@@ -5,16 +5,17 @@ const ApiError = require("../../error/apierror");
 const Op = require('Sequelize').Op;
 
 const filemv = (img) => {
-    let fileName = uuid.v4() + ".jpg";
+    let fileName = null;
     let fileNames = [];
     if (img === null) { return null }
     if (Array.isArray(img)) {
         for (let i = 0; i < img.length; i++) {
-            img[i].mv(path.resolve(__dirname, "../../", "static", fileName));
             fileName = uuid.v4() + ".jpg";
+            img[i].mv(path.resolve(__dirname, "../../", "static", fileName));
             fileNames.push(fileName);
         }
     } else {
+        fileName = uuid.v4() + ".jpg";
         img.mv(path.resolve(__dirname, "../../", "static", fileName));
         fileNames.push(fileName);
     }
@@ -24,9 +25,10 @@ const filemv = (img) => {
 class itemController {
     async create(req, res, next) {
         try {
-            const { username, title, description, isLiked, price, userid, state, typeid, locationid } = req.body;
+            const { username, title, description, phone, price, userid, state, typeid, locationid } = req.body;
             const { img } = req.files;
-            const item = await Item.create({ username, title, description, price, userid, photo: filemv(img), state, typeid, locationid })
+            console.log(img)
+            const item = await Item.create({ username, title, description, price, userid, phone, photo: filemv(img), state, typeid, locationid })
             return res.json(item);
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -49,15 +51,15 @@ class itemController {
             let items;
             price = price.split(',');
             if (+state === 1) {
-                state = [3,2];
+                state = [3, 2];
             }
             typeid = typeid.split(",");
             typeid = typeid.map(e => +e)
-            console.log(typeid)
+
             page = page || 1;
             limit = limit || 10;
             let offset = page * limit - limit;
-            items = await Item.findAll({ where: { typeid, published: true, locationid: +locationid === 1 ? { [Op.between]: [0,100] } : locationid, price: { [Op.between]: price }, state }, limit, offset })
+            items = await Item.findAndCountAll({ where: { typeid, published: true, locationid: +locationid === 1 ? { [Op.between]: [0, 100] } : locationid, price: { [Op.between]: price }, state }, limit, offset })
             return res.json(items)
         } catch (e) {
             next(ApiError.badRequest(e.message))
