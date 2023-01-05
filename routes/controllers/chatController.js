@@ -1,7 +1,7 @@
 const { Dialog, Message, User, keyKeeper } = require("../../models/models");
 const ApiError = require("../../error/apierror");
-const Op = require('Sequelize').Op;
-const sequelize = require('Sequelize');
+const Op = require('sequelize').Op;
+const sequelize = require('sequelize');
 
 class longPulling {
 
