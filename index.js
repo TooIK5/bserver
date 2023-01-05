@@ -35,14 +35,13 @@ const start = async () => {
     }
 }
 
-
 const ws = require("ws");
 const { Message } = require("./models/models");
 const WSPORT = process.env.WSPORT || 5050;
 
-const wss = new ws.Server({
-    port: 5050
-}, () => console.log(`WS server started on port ${WSPORT}`));
+// const wss = new ws.Server({
+//     port: 5050
+// }, () => console.log(`WS server started on port ${WSPORT}`));
 
 wss.on("connection", function connection(ws) {
     ws.on("message", function (message) {
