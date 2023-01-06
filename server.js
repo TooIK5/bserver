@@ -35,6 +35,8 @@ const start = async () => {
     }
 }
 
+start();
+
 const ws = require("ws");
 const { Message } = require("./models/models");
 const WSPORT = process.env.WSPORT || 5050;
@@ -87,4 +89,3 @@ async function sendMessage(message) {
 }
 
 
-start();
