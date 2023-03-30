@@ -1,9 +1,76 @@
-const { Dialog, Message, User, keyKeeper } = require("../../models/models");
+const { Dialog, Message, User, Unreaded, keyKeeper } = require("../../models/models");
 const ApiError = require("../../error/apierror");
 const Op = require('sequelize').Op;
 const sequelize = require('sequelize');
 
-class longPulling {
+class chatController {
+    async removeUnreadebale(req, res, next) {
+        console.log("REMOVE UNREADABLE 1 ")
+        try {
+            let {did, uid} = req.query;
+            uid = +uid;
+            did = +did;
+            console.log("remove UNREADABLE 2")
+            const array = await Unreaded.findOne({where: {uid}});
+           
+            let newArr = array.did;
+            console.log("remove UNREADABLE 3", newArr)
+            let index = newArr.indexOf(did);
+      
+                if (index > -1) {
+                    newArr.splice(index, 1);
+                    console.log(newArr);
+                    await Unreaded.update(
+                        {did: newArr},
+                        {where: {uid}}
+                        );
+                        console.log("remove UNREADABLE 4", did)
+                        return res.json(did)
+                } 
+                console.log("remove UNREADABLE 5")
+                return res.json({})
+        }
+        catch (error) {
+            console.error("get", error.message)
+        }
+    }
+
+    async setUnreadebale(uid, did, next) {
+        try {
+            const array = await Unreaded.findOne({where: {uid}});
+            let newArr = array.did;
+                if (newArr.indexOf(did) > -1) {
+                    
+                } else {
+                 
+                    newArr.push(did)
+            
+                }
+
+            await Unreaded.update(
+                {did: newArr},
+                {where: {uid}}
+                );
+        }
+        catch (error) {
+            console.error("set", error.message)
+        }
+    }
+
+    async getUnreadebale(req, res, next) {
+        try {
+            let { uid } = req.query;
+            let unreaded = await Unreaded.findOne(
+                {
+                    where: { uid: uid },
+                },
+            )
+            return res.json(unreaded)
+        }
+        catch (error) {
+            next(ApiError.badRequest(error.message))
+        }
+    }
 
     async addMessages(req, res, next) {
         const { message, did, uid } = req.body;
@@ -22,8 +89,13 @@ class longPulling {
     }
 
     async getMessages(req, res, next) {
+        console.log("get messages")
         try {
+            console.log("get messages")
             let { did } = req.query;
+            did = +did;
+          
+            console.log(did)
             let msg = await Message.findAll(
                 {
                     where: { DialogId: did },
@@ -32,6 +104,7 @@ class longPulling {
             return res.json(msg)
         }
         catch (error) {
+            console.log("get message")
             next(ApiError.badRequest(error.message))
         }
     }
@@ -39,6 +112,7 @@ class longPulling {
     async getDialogs(req, res, next) {
         let { userid } = req.query;
         try {
+            console.log("get dialogs")
             let keys = await keyKeeper.findAll(
                 {
                     where: { UserId: userid },
@@ -75,6 +149,7 @@ class longPulling {
             for (let i = 0; i < userProps.length; i++) {
                 let index = ids.indexOf(userProps[i].dataValues.id);
                 userProps[i].dataValues.did = dids[index];
+                userProps[i].dataValues.rid = ids[index];
             }
             
             return res.json(userProps)
@@ -96,6 +171,7 @@ class longPulling {
             if (checkD) {
                 return next(ApiError.badRequest(checkD.id))
             }
+
             let dialog = await Dialog.create({
                 uids: [+user1, +user2]
             });
@@ -106,11 +182,17 @@ class longPulling {
             await dialog.addUser(userRow1, { through: keyKeeper });
             await dialog.addUser(userRow2, { through: keyKeeper });
 
-            return res.json(dialog);
+            res.status(200)
         } catch (error) {
             next(ApiError.badRequest(error.message))
         }
     }
+    async subscribe(req, res, next) {
+
+    }
+    async unsubscribe(req, res, next) {
+
+    }
 }
 
-module.exports = new longPulling();
+module.exports = new chatController();

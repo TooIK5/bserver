@@ -322,6 +322,12 @@ const Message = sequelize.define(
     uid: { type: DataTypes.INTEGER },
 })
 
+const Unreaded = sequelize.define(
+    'Unreaded', {
+    uid: { type: DataTypes.INTEGER },
+    did: { type: DataTypes.ARRAY(DataTypes.INTEGER) },
+})
+
 User.hasOne(Basket);
 Basket.belongsTo(User); //может иметь одного пользователя
 
@@ -342,6 +348,7 @@ module.exports = {
     User,
     Dialog,
     Message,
+    Unreaded,
     Basket,
     BasketItems,
     keyKeeper,

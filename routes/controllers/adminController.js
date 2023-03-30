@@ -1,4 +1,4 @@
-const { Categories, Locations, Item } = require("../../models/models");
+const { Categories, Item } = require("../../models/models");
 const ApiError = require("../../error/apierror");
 
 class adminController {

@@ -5,6 +5,30 @@ const ApiError = require("../../error/apierror");
 const Op = require('sequelize').Op;
 const sequelize = require('sequelize');
 const fs = require('fs');
+const { compress } = require('compress-images/promise');
+let INPUT_path_to_your_images;
+let OUTPUT_path;
+
+INPUT_path_to_your_images = path.resolve(__dirname, "../../", "static/precompressed/*.{jpg,JPG,jpeg,JPEG,png}");
+OUTPUT_path = path.join(__dirname, "../../", "static/");
+
+const processImages = async (files) => {
+    const result = await compress({
+        source: INPUT_path_to_your_images,
+        destination: OUTPUT_path,
+        enginesSetup: {
+            jpg: { engine: 'mozjpeg', command: ['-quality', '60']},
+            png: { engine: 'pngquant', command: ['--quality=20-50', '-o']},
+        }
+    }).then((stat)=> {
+        files.forEach(element => {
+            fs.unlink(path.resolve(__dirname, "../../static/precompressed/", element), (err) => { return err });
+        });
+    })
+    .catch((error) => {
+        console.log("catched error: ", error)
+    });
+};
 
 const filemv = (img) => {
     let fileName = null;
@@ -13,12 +37,12 @@ const filemv = (img) => {
     if (Array.isArray(img)) {
         for (let i = 0; i < img.length; i++) {
             fileName = uuid.v4() + ".jpg";
-            img[i].mv(path.resolve(__dirname, "../../", "static", fileName));
+            img[i].mv(path.resolve(__dirname, "../../", "static/precompressed", fileName));
             fileNames.push(fileName);
         }
     } else {
         fileName = uuid.v4() + ".jpg";
-        img.mv(path.resolve(__dirname, "../../", "static", fileName));
+        img.mv(path.resolve(__dirname, "../../", "static/precompressed", fileName));
         fileNames.push(fileName);
     }
     return fileNames;
@@ -29,8 +53,25 @@ class itemController {
         try {
             let { username, title, description, phone, price, userid, state, typeid, locationid } = req.body;
             const { img } = req.files;
+            const checkItems = await Item.findAll({
+                where: {
+                    username
+                }
+            });
+        
+            if (img.length > 5) {
+                next(ApiError.badRequest("Лимит изображений 5 штук!"))
+            }
+
+            if (checkItems.length >= 10) {
+                next(ApiError.badRequest("Лимит объвлений 10 штук"))
+            }
+
             title = title.toLowerCase();
-            const item = await Item.create({ username, title, description, price, userid, phone, photo: filemv(img), state, typeid, locationid })
+                let photos = filemv(img);
+                processImages(photos);
+ 
+                const item = await Item.create({ username, title, description, price, userid, phone, photo: photos, state, typeid, locationid })
             return res.json(item);
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -68,16 +109,19 @@ class itemController {
         }
     }
 
-    async search(req, res) {
+    async search(req, res, next) {
         let { title, limit, page } = req.query;
-        title = title.toLowerCase();
-        page = page || 1;
-        limit = limit || 10;
-        let offset = page * limit - limit;
-        sequelize.fn('lower', sequelize.col('firstname'));
-        //let items = await Item.findAndCountAll({ where: { title: sequelize.fn('lower', sequelize.col(`title`)), published: true }, limit, offset });
-        let items = await Item.findAndCountAll({ where: { title: { [Op.substring]: `${title}%` }, published: true }, limit, offset });
-        return res.json(items);
+        try {
+            title = title.toLowerCase();
+            page = page || 1;
+            limit = limit || 10;
+            let offset = page * limit - limit;
+            sequelize.fn('lower', sequelize.col('firstname'));
+            let items = await Item.findAndCountAll({ where: { title: { [Op.substring]: `${title}%` }, published: true }, limit, offset });
+            return res.json(items);
+        } catch (e) {
+            next(ApiError.badRequest(e.message))
+        }
     }
 
     async update(req, res, next) {

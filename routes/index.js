@@ -6,7 +6,7 @@ const itemRouter = require("./itemRouter");
 const likedRouter = require("./likedRouter");
 const userRouter = require("./userRouter");
 const adminRouter = require("./adminRouter");
-const longpolling = require("./longpolling");
+const longpolling = require("./chatRouter");
  
 router.use('/user', userRouter)
 router.use('/categories', categoriesRouter)
