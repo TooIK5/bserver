@@ -47,6 +47,7 @@ const prepareFile = async (url) => {
 };
 
  client = http.createServer(async (req, res) => {
+    console.log("create server")
     const file = await prepareFile(req.url);
     const statusCode = file.found ? 200 : 404;
     const mimeType = MIME_TYPES[file.ext] || MIME_TYPES.default;
